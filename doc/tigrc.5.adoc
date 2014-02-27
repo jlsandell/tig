@@ -646,6 +646,7 @@ color default		white	black
 color diff-header	yellow	default
 color diff-index	blue	default
 color diff-chunk	magenta	default
+color stage.diff-chunk	cyan	default
 color "Reported-by:"	green	default
 --------------------------------------------------------------------------
 
@@ -668,6 +669,8 @@ Area names::
 	Valid built-in area names are described below. Note, all names are
 	case-insensitive, and you may use '-', '_', and '.' interchangeably,
 	e.g. "Diff-Header", "DIFF_HEADER", and "diff.header" are the same.
+	Built-in area names can further be prefixed with a keymap name to
+	set the color for an area in a specific view.
 
 Color names::
 

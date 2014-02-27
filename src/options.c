@@ -216,9 +216,33 @@ option_color_command(int argc, const char *argv[])
 		return ERROR_WRONG_NUMBER_OF_ARGUMENTS;
 
 	if (*argv[0] == '"' || *argv[0] == '\'') {
-		info = add_custom_color(argv[0]);
+		info = add_custom_color(NULL, argv[0]);
 	} else {
-		info = find_line_info(argv[0], strlen(argv[0]), FALSE);
+		char prefix[SIZEOF_STR];
+		const char *prefixend = strchr(argv[0], '.');
+
+		if (prefixend) {
+			const char *name = prefixend + 1;
+			size_t namelen = strlen(name);
+			struct keymap *keymap;
+
+			info = find_line_info(NULL, name, namelen, FALSE);
+			if (!info)
+				return ERROR_UNKNOWN_COLOR;
+
+			string_ncopy(prefix, argv[0], name - argv[0] - 1);
+			keymap = get_keymap(prefix);
+			if (!keymap)
+				return ERROR_UNKNOWN_KEY_MAP;
+
+			name = info->name;
+			info = find_line_info(prefix, name, namelen, FALSE);
+			if (!info) {
+				info = add_line_info(keymap->name, name, namelen, "", 0);
+			}
+		} else {
+			info = find_line_info(NULL, argv[0], strlen(argv[0]), FALSE);
+		}
 	}
 	if (!info) {
 		static const struct enum_map_entry obsolete[] = {
@@ -231,7 +255,7 @@ option_color_command(int argc, const char *argv[])
 
 		if (!map_enum(&index, obsolete, argv[0]))
 			return ERROR_UNKNOWN_COLOR_NAME;
-		info = get_line_info(index);
+		info = get_line_info(NULL, index);
 	}
 
 	if (!set_color(&info->fg, argv[1]) ||
@@ -768,7 +792,7 @@ set_work_tree(const char *value)
 static void
 parse_git_color_option(enum line_type type, char *value)
 {
-	struct line_info *info = get_line_info(type);
+	struct line_info *info = get_line_info(NULL, type);
 	const char *argv[SIZEOF_ARG];
 	int argc = 0;
 	bool first_color = TRUE;

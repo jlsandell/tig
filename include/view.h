@@ -276,6 +276,12 @@ find_line_by_type(struct view *view, struct line *line, enum line_type type, int
 
 bool format_argv(struct view *view, const char ***dst_argv, const char *src_argv[], bool first, bool file_filter);
 
+#define get_view_attr(view, type) \
+	get_line_attr((view)->ops->keymap.name, type)
+
+#define get_view_color(view, type) \
+	get_line_color((view)->ops->keymap.name, type)
+
 /*
  * Incremental updating
  */

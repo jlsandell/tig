@@ -102,7 +102,7 @@ diff_common_read(struct view *view, const char *data, struct diff_state *state)
 	}
 
 	if (type == LINE_DIFF_HEADER) {
-		const int len = get_line_info(LINE_DIFF_HEADER)->linelen;
+		const int len = get_line_info(NULL, LINE_DIFF_HEADER)->linelen;
 
 		state->after_diff = TRUE;
 		if (!strncmp(data + len, "combined ", strlen("combined ")) ||

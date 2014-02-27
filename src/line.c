@@ -61,14 +61,14 @@ get_line_type_from_ref(const struct ref *ref)
 }
 
 struct line_info *
-get_line_info(enum line_type type)
+get_line_info(const char *prefix, enum line_type type)
 {
 	assert(type < line_infos);
 	return &line_info[type];
 }
 
-static struct line_info *
-add_line_info(const char *name, size_t namelen, const char *line, size_t linelen)
+struct line_info *
+add_line_info(const char *prefix, const char *name, size_t namelen, const char *line, size_t linelen)
 {
 	struct line_info *info = NULL;
 
@@ -76,6 +76,7 @@ add_line_info(const char *name, size_t namelen, const char *line, size_t linelen
 		die("Failed to allocate line info");
 
 	info = &line_info[line_infos++];
+	info->prefix = prefix;
 	info->name = name;
 	info->namelen = namelen;
 	info->line = line;
@@ -85,12 +86,13 @@ add_line_info(const char *name, size_t namelen, const char *line, size_t linelen
 }
 
 #define ADD_LINE_INFO(type, line) \
-	add_line_info(#type, STRING_SIZE(#type), (line), STRING_SIZE(line))
+	add_line_info("", #type, STRING_SIZE(#type), (line), STRING_SIZE(line))
 
 struct line_info *
-find_line_info(const char *name, size_t namelen, bool line_only)
+find_line_info(const char *prefix, const char *name, size_t namelen, bool line_only)
 {
 	enum line_type type;
+	int prefixlen = prefix ? strlen(prefix) : 0;
 
 	if (!line_infos) {
 		LINE_INFO(ADD_LINE_INFO);
@@ -99,6 +101,10 @@ find_line_info(const char *name, size_t namelen, bool line_only)
 	for (type = 0; type < line_infos; type++) {
 		struct line_info *info = &line_info[type];
 
+		if (prefix &&
+		    (prefixlen != info->prefixlen ||
+		     strncasecmp(info->prefix, prefix, prefixlen)))
+			continue;
 		if (!line_only && enum_equals(*info, name, namelen))
 			return info;
 		if (info->linelen && namelen >= info->linelen &&
@@ -106,14 +112,16 @@ find_line_info(const char *name, size_t namelen, bool line_only)
 			return info;
 	}
 
+	if (prefix)
+		return find_line_info(NULL, name, namelen, line_only);
 	return NULL;
 }
 
 struct line_info *
-add_custom_color(const char *quoted_line)
+add_custom_color(const char *prefix, const char *quoted_line)
 {
 	size_t linelen = strlen(quoted_line) - 2;
-	struct line_info *info = find_line_info(quoted_line + 1, linelen, TRUE);
+	struct line_info *info = find_line_info(prefix, quoted_line + 1, linelen, TRUE);
 	char *line;
 
 	if (info)
@@ -123,7 +131,7 @@ add_custom_color(const char *quoted_line)
 	if (!line)
 		return NULL;
 
-	info = add_line_info(line, linelen, line, linelen);
+	info = add_line_info(prefix, line, linelen, line, linelen);
 	if (!info)
 		free(line);
 	return info;
